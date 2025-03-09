@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './IDEMentorBot.css';
 
 // Configure the API URL
-const API_URL = 'http://127.0.0.1:5000';
+const API_URL = 'https://ide-mentor-bot-api.onrender.com';
 
 function IDEMentorBot() {
   const [query, setQuery] = useState('');

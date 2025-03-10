@@ -162,10 +162,9 @@ function IDEMentorBot() {
         </div>
 
         <button 
-          type="submit" 
-          className={backendStatus !== 'connected' ? 'button-disabled' : ''}
+          type="submit"
         >
-          {loading ? 'Processing...' : 'Run'}
+          Run
         </button>
       </form>
 

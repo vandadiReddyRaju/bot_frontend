@@ -133,7 +133,7 @@ function IDEMentorBot() {
                 disabled={backendStatus === 'checking'}
                 style={{ width: '150px' }}
               >
-                {backendStatus === 'checking' ? 'Checking...' : 'Retry Connection'}
+                 {backendStatus === 'checking' ? 'Checking...' : 'Retry Connection'}
               </button>
             </span>
           )}
@@ -163,7 +163,7 @@ function IDEMentorBot() {
 
         <button 
           type="submit" 
-          disabled={loading || backendStatus !== 'connected'}
+          ```disabled={loading || backendStatus !== 'connected'} ```
           className={backendStatus !== 'connected' ? 'button-disabled' : ''}
         >
           {loading ? 'Processing...' : 'Run'}

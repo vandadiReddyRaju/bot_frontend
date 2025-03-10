@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './IDEMentorBot.css';
 
-// Configure the API URL
 const API_URL = 'https://ide-mentor-bot-api.onrender.com';
 
 function IDEMentorBot() {
@@ -12,31 +11,26 @@ function IDEMentorBot() {
   const [error, setError] = useState('');
   const [backendStatus, setBackendStatus] = useState('checking');
 
-  // Check backend status only once on component mount
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const response = await fetch(`${API_URL}/`, {
+        const res = await fetch(`${API_URL}/`, {
           method: 'GET',
           mode: 'cors',
-          headers: {
-            'Accept': 'application/json',
-          },
+          headers: { 'Accept': 'application/json' },
         });
-        
-        if (response.ok) {
+
+        if (res.ok) {
           setBackendStatus('connected');
-          setError('');
         } else {
-          throw new Error(`Backend returned status ${response.status}`);
+          throw new Error(`Status ${res.status}`);
         }
       } catch (err) {
-        console.error('Backend connection error:', err);
+        console.error('Backend Error:', err);
         setBackendStatus('error');
       }
     };
-    
-    // Check backend status only once when component mounts
+
     checkBackend();
   }, []);
 
@@ -45,9 +39,9 @@ function IDEMentorBot() {
     setLoading(true);
     setError('');
     setResponse('');
-    
+
     if (!file) {
-      setError('Please select a zip file');
+      setError('Please select a zip file.');
       setLoading(false);
       return;
     }
@@ -57,7 +51,7 @@ function IDEMentorBot() {
     formData.append('query', query);
 
     try {
-      const response = await fetch(`${API_URL}/process`, {
+      const res = await fetch(`${API_URL}/process`, {
         method: 'POST',
         mode: 'cors',
         body: formData,
@@ -66,23 +60,24 @@ function IDEMentorBot() {
         },
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Something went wrong.');
       }
 
       setResponse(data.response);
       setBackendStatus('connected');
     } catch (err) {
       console.error('Error details:', err);
+
       if (!navigator.onLine) {
-        setError('Your internet connection appears to be offline. Please check your connection and try again.');
+        setError('You are offline. Please check your internet connection.');
       } else if (err.message.includes('Failed to fetch')) {
-        setError('Cannot connect to the server. Please make sure the backend is running on port 5000 and try again.');
+        setError('Cannot connect to the server. Please check the deployment.');
         setBackendStatus('error');
       } else {
-        setError(err.message || 'Failed to process the request. Please try again.');
+        setError(err.message || 'Failed to process the request.');
       }
     } finally {
       setLoading(false);
@@ -92,22 +87,19 @@ function IDEMentorBot() {
   const retryConnection = async () => {
     setBackendStatus('checking');
     try {
-      const response = await fetch(`${API_URL}/`, {
+      const res = await fetch(`${API_URL}/`, {
         method: 'GET',
         mode: 'cors',
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: { 'Accept': 'application/json' },
       });
-      
-      if (response.ok) {
+
+      if (res.ok) {
         setBackendStatus('connected');
-        setError('');
       } else {
-        throw new Error(`Backend returned status ${response.status}`);
+        throw new Error(`Status ${res.status}`);
       }
     } catch (err) {
-      console.error('Backend connection error:', err);
+      console.error('Connection Error:', err);
       setBackendStatus('error');
     }
   };
@@ -131,61 +123,53 @@ function IDEMentorBot() {
                 className="retry-button" 
                 onClick={retryConnection}
                 disabled={backendStatus === 'checking'}
-                style={{ width: '150px' }}
               >
-                 {backendStatus === 'checking' ? 'Checking...' : 'Retry Connection'}
+                 {backendStatus === 'checking' ? 'Checking...' : 'Retry'}
               </button>
             </span>
           )}
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="input-group">
-            <label htmlFor="query">Your Query:</label>
+            <label>Your Query:</label>
             <textarea
-              id="query"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="E.g., Test cases failed, can you help me with my mistakes?"
+              placeholder="E.g., Test case failed. Can you help me?"
               required
             />
           </div>
-          
+
           <div className="input-group">
-            <label htmlFor="file">Upload Zip File:</label>
+            <label>Upload Zip File:</label>
             <input
               type="file"
-              id
-            onChange={(e) => setFile(e.target.files[0])}
-            required
-          />
-        </div>
+              id="file"
+              onChange={(e) => setFile(e.target.files[0])}
+              required
+            />
+          </div>
 
-        <button 
-          type="submit"
-        >
-          Run
-        </button>
-      </form>
+          <button type="submit" disabled={loading}>
+            {loading ? 'Processing...' : 'Run'}
+          </button>
+        </form>
 
-      {error && <div className="error">{error}</div>}
+        {error && <div className="error">{error}</div>}
       </div>
-      <div className='container-2' style={{ position: 'relative' }}>
-      <h1>Response</h1>
-      {response && (
-        <div style={{ position: 'relative', border: '1px solid #ccc', borderRadius: '5px', padding: '10px' }}>
-        <button
-          onClick={handleCopy}
-          className="copy-button"
-        >
-          Copy
-        </button>
-        <pre style={{ margin: '0', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-          {response}
-        </pre>
+
+      <div className='container-2'>
+        <h1>Response</h1>
+        {response && (
+          <div>
+            <button onClick={handleCopy} className="copy-button">
+              Copy
+            </button>
+            <pre>{response}</pre>
+          </div>
+        )}
       </div>
-      )}
-    </div>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './IDEMentorBot.css';
 
-// Configure the API URL
-const API_URL = 'https://ide-mentor-bot-api.onrender.com';
+// Configure the API URL from environment variables
+const API_URL = process.env.REACT_APP_API_URL || 'https://ide-mentor-bot-api.onrender.com';
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit
 
 function IDEMentorBot() {
   const [query, setQuery] = useState('');
@@ -11,6 +12,7 @@ function IDEMentorBot() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [backendStatus, setBackendStatus] = useState('checking');
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Check backend status only once on component mount
   useEffect(() => {
@@ -39,18 +41,37 @@ function IDEMentorBot() {
     checkBackend();
   }, []);
 
+  const validateFile = (file) => {
+    if (!file.name.endsWith('.zip')) {
+      throw new Error('Please upload a zip file');
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error('File size exceeds 50MB limit');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setResponse('');
+    setUploadProgress(0);
 
-    // ✅ Removed the backend status check - Now it will process regardless of connection
+    // Keep the old code commented
     // if (backendStatus !== 'connected') {
     //   setError('Cannot process the request, backend not connected.');
     //   setLoading(false);
     //   return;
     // }
+
+    // New implementation with backend check
+    if (backendStatus !== 'connected') {
+      const confirmProcess = window.confirm('Backend connection issues detected. Do you want to try processing anyway?');
+      if (!confirmProcess) {
+        setLoading(false);
+        return;
+      }
+    }
 
     if (!file) {
       setError('Please select a zip file');
@@ -58,17 +79,23 @@ function IDEMentorBot() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('zip', file);
-    formData.append('query', query);
-
     try {
+      validateFile(file);
+      
+      const formData = new FormData();
+      formData.append('zip', file);
+      formData.append('query', query);
+
       const response = await fetch(`${API_URL}/process`, {
         method: 'POST',
         mode: 'cors',
         body: formData,
         headers: {
           'Accept': 'application/json',
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
         },
       });
 
@@ -85,6 +112,7 @@ function IDEMentorBot() {
       setError(err.message || 'Failed to process the request. Please try again.');
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -120,10 +148,11 @@ function IDEMentorBot() {
           </div>
           
           <div className="input-group">
-            <label htmlFor="file">Upload Zip File:</label>
+            <label htmlFor="file">Upload Zip File (Max 50MB):</label>
             <input
               type="file"
               id="file"
+              accept=".zip"
               onChange={(e) => setFile(e.target.files[0])}
               required
             />
@@ -131,9 +160,21 @@ function IDEMentorBot() {
 
           <button 
             type="submit"
+            disabled={loading}
+            className={loading ? 'loading' : ''}
           >
-            Run
+            {loading ? 'Processing...' : 'Run'}
           </button>
+          
+          {loading && uploadProgress > 0 && (
+            <div className="progress-bar">
+              <div 
+                className="progress" 
+                style={{width: `${uploadProgress}%`}}
+              ></div>
+              <span>{uploadProgress}%</span>
+            </div>
+          )}
         </form>
 
         {error && <div className="error">{error}</div>}

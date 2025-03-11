@@ -98,8 +98,9 @@ function IDEMentorBot() {
           setUploadProgress(percentCompleted);
         },
       });
-
+      console.log(response)
       const data = await response.json();
+      console.log(data)
       
       if (!response.ok) {
         throw new Error(data.error || 'Something went wrong');
